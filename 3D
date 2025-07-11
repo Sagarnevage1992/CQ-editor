@@ -1,0 +1,47 @@
+import cadquery as cq
+
+# Create the base cylindrical body
+base = cq.Workplane("XY").circle(52/2).extrude(22)
+
+# Cut the inner bore (Ø40)
+base = base.faces(">Z").workplane().hole(40)
+
+# Cut the front slot (U-shape cut)
+slot_width = 25
+slot_depth = 22
+slot = (
+    cq.Workplane("XY")
+    .center(0, -slot_depth / 2)
+    .rect(slot_width, slot_depth)
+    .extrude(22)
+)
+base = base.cut(slot)
+
+# Fork arm holes Ø10 H7 on both arms
+hole_offset = 10  # from center to each side
+base = (
+    base.faces(">Z")
+    .workplane(centerOption="CenterOfMass")
+    .pushPoints([(-hole_offset, -slot_depth/2), (hole_offset, -slot_depth/2)])
+    .hole(10)
+)
+
+# Add horizontal hole Ø12 mm, 19 mm from base
+horizontal_hole = (
+    cq.Workplane("YZ")
+    .center(0, 19)
+    .hole(12, 40)
+)
+base = base.cut(horizontal_hole)
+
+# Add M6 tapped hole intersecting Ø12 hole from bottom
+m6_hole = (
+    cq.Workplane("XY")
+    .center(0, -slot_depth / 2)
+    .workplane(offset=0)
+    .hole(6, 10.8)
+)
+base = base.cut(m6_hole)
+
+# Show the model
+show_object(base)
